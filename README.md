@@ -10,6 +10,31 @@ A privacy-focused end-to-end encrypted messaging application with a Go backend a
 - 📱 **Android Client** - Modern Jetpack Compose UI
 - 🔑 **Secure Storage** - SQLCipher encrypted local database
 - 🚀 **Self-Hosted** - Run your own backend
+- 🏗️ **CI/CD** - Automatic builds on every push
+
+## Quick Start - Download APK
+
+### Pre-built APKs
+
+Download the latest debug APK from GitHub Actions:
+
+1. Go to [GitHub Actions](https://github.com/simon141404-gif/shadow-chat-/actions)
+2. Click on the latest workflow run
+3. Download the `debug-apk` artifact
+
+### Build from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/simon141404-gif/shadow-chat-.git
+cd shadow-chat-
+
+# Build debug APK
+cd android
+./gradlew assembleDebug
+
+# APK will be at: app/build/outputs/apk/debug/app-debug.apk
+```
 
 ## Tech Stack
 
@@ -179,6 +204,7 @@ go test ./...
 
 Android:
 ```bash
+cd android
 ./gradlew test
 ```
 
@@ -186,8 +212,35 @@ Android:
 
 Generate mocks (Android):
 ```bash
+cd android
 ./gradlew generateMocks
 ```
+
+## CI/CD
+
+### GitHub Actions
+
+The project uses GitHub Actions for continuous integration:
+
+- **Backend CI**: Runs tests, builds binary, validates migrations
+- **Android CI**: Runs tests, builds debug APK, builds release APK
+
+### Downloading APKs
+
+1. Go to [GitHub Actions](https://github.com/simon141404-gif/shadow-chat-/actions)
+2. Select the latest workflow run
+3. Download the `debug-apk` artifact
+
+### Release Builds
+
+For release builds, set up these repository secrets:
+
+- `ANDROID_KEYSTORE_BASE64` - Base64-encoded keystore
+- `ANDROID_KEYSTORE_PASSWORD` - Keystore password
+- `ANDROID_KEY_ALIAS` - Key alias
+- `ANDROID_KEY_PASSWORD` - Key password
+
+Release APKs are built automatically on push to `main`/`master`/`develop` branches.
 
 ## License
 
