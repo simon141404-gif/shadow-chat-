@@ -19,9 +19,9 @@ func NewPostgres(url string) (*pgxpool.Pool, error) {
 	// Add sslmode=require if not present
 	if !strings.Contains(url, "sslmode") {
 		if strings.Contains(url, "?") {
-			url += "&sslmode=require"
+			url += "&sslmode=disable"
 		} else {
-			url += "?sslmode=require"
+			url += "?sslmode=disable"
 		}
 	}
 	
