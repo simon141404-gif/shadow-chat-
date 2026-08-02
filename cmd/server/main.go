@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 	"github.com/yourorg/shadowchat/backend/internal/config"
 	"github.com/yourorg/shadowchat/backend/internal/db"
 	"github.com/yourorg/shadowchat/backend/internal/repository"
@@ -27,27 +29,35 @@ func main() {
 	cfg := config.Load()
 	logger.Info("loaded config", zap.Any("config", cfg))
 
-	// Connect to PostgreSQL
+	// Connect to PostgreSQL (optional - can work without)
+	var pg *pgxpool.Pool
 	pg, err := db.NewPostgres(cfg.PostgresURL)
 	if err != nil {
-		logger.Fatal("failed to connect to postgres", zap.Error(err))
+		logger.Warn("failed to connect to postgres, continuing without DB", zap.Error(err))
+	} else if pg != nil {
+		defer pg.Close()
+		logger.Info("connected to postgres")
+		
+		// Run migrations
+		if err := runMigrations(pg); err != nil {
+			logger.Warn("failed to run migrations", zap.Error(err))
+		} else {
+			logger.Info("migrations completed")
+		}
+	} else {
+		logger.Info("running without PostgreSQL (in-memory mode)")
 	}
-	defer pg.Close()
-	logger.Info("connected to postgres")
 
-	// Run migrations
-	if err := runMigrations(pg); err != nil {
-		logger.Fatal("failed to run migrations", zap.Error(err))
-	}
-	logger.Info("migrations completed")
-
-	// Connect to Redis
-	redis, err := db.NewRedis(cfg.RedisURL)
+	// Connect to Redis (optional - can work without)
+	var redis *redis.Client
+	redis, err = db.NewRedis(cfg.RedisURL)
 	if err != nil {
 		logger.Warn("failed to connect to redis, continuing without redis", zap.Error(err))
-	} else {
+	} else if redis != nil {
 		defer redis.Close()
 		logger.Info("connected to redis")
+	} else {
+		logger.Info("running without Redis (in-memory mode)")
 	}
 
 	// Initialize repositories
@@ -90,6 +100,9 @@ func main() {
 }
 
 func runMigrations(pg *db.PostgresPool) error {
+	if pg == nil {
+		return nil // No DB, skip migrations
+	}
 	ctx := context.Background()
 	migrations := []string{
 		`CREATE EXTENSION IF NOT EXISTS pgcrypto;`,

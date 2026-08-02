@@ -6,11 +6,7 @@ services:
     buildCommand: go build -o bin/shadowchat-backend ./cmd/server
     startCommand: ./bin/shadowchat-backend
     envVars:
-      - key: DATABASE_URL
-        value: postgres_url_here
-      - key: REDIS_URL
-        value: redis_url_here
       - key: JWT_SECRET
-        value: change_this_to_random_string
+        value: mysecret123
       - key: ALLOWED_ORIGIN
         value: "*"

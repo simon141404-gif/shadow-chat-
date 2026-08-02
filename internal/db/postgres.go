@@ -10,6 +10,11 @@ import (
 type PostgresPool = pgxpool.Pool
 
 func NewPostgres(url string) (*pgxpool.Pool, error) {
+	// If no URL provided, return nil (will use in-memory fallback)
+	if url == "" || url == "postgres://localhost:5432/shadowchat?sslmode=disable" {
+		return nil, nil
+	}
+	
 	cfg, err := pgxpool.ParseConfig(url)
 	if err != nil {
 		return nil, err

@@ -8,6 +8,11 @@ import (
 )
 
 func NewRedis(url string) (*redis.Client, error) {
+	// If no URL provided, return nil (will use in-memory fallback)
+	if url == "" || url == "redis://localhost:6379" {
+		return nil, nil
+	}
+	
 	opt, err := redis.ParseURL(url)
 	if err != nil {
 		return nil, err
