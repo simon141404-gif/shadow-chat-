@@ -16,6 +16,8 @@ import (
 	"go.uber.org/zap"
 )
 
+type PostgresPool = db.PostgresPool
+
 func main() {
 	// Initialize logger
 	logger, _ := zap.NewProduction()
@@ -32,6 +34,12 @@ func main() {
 	}
 	defer pg.Close()
 	logger.Info("connected to postgres")
+
+	// Run migrations
+	if err := runMigrations(pg); err != nil {
+		logger.Fatal("failed to run migrations", zap.Error(err))
+	}
+	logger.Info("migrations completed")
 
 	// Connect to Redis
 	redis, err := db.NewRedis(cfg.RedisURL)
@@ -79,4 +87,87 @@ func main() {
 	}
 
 	logger.Info("server exited")
+}
+
+func runMigrations(pg *db.PostgresPool) error {
+	ctx := context.Background()
+	migrations := []string{
+		`CREATE EXTENSION IF NOT EXISTS pgcrypto;`,
+		`CREATE TABLE IF NOT EXISTS users (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			public_id TEXT UNIQUE NOT NULL,
+			display_name TEXT,
+			avatar_url TEXT,
+			bio TEXT,
+			created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+			updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+			deleted_at TIMESTAMPTZ
+		);`,
+		`CREATE TABLE IF NOT EXISTS sessions (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			jti TEXT UNIQUE NOT NULL,
+			refresh_token_hash TEXT NOT NULL,
+			expires_at TIMESTAMPTZ NOT NULL,
+			revoked_at TIMESTAMPTZ
+		);`,
+		`CREATE TABLE IF NOT EXISTS chats (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			type TEXT NOT NULL,
+			name TEXT,
+			created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+			updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+		);`,
+		`CREATE TABLE IF NOT EXISTS chat_members (
+			chat_id UUID NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
+			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			joined_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+			PRIMARY KEY (chat_id, user_id)
+		);`,
+		`CREATE TABLE IF NOT EXISTS messages (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			chat_id UUID NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
+			sender_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			client_msg_id TEXT,
+			ciphertext BYTEA,
+			message_type TEXT NOT NULL,
+			reply_to_message_id UUID,
+			created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+			edited_at TIMESTAMPTZ,
+			deleted_at TIMESTAMPTZ,
+			expires_at TIMESTAMPTZ
+		);`,
+		`CREATE TABLE IF NOT EXISTS attachments (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+			file_name TEXT NOT NULL,
+			file_size BIGINT,
+			content_type TEXT,
+			storage_path TEXT NOT NULL,
+			created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+		);`,
+		`CREATE TABLE IF NOT EXISTS contacts (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			contact_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+			UNIQUE(user_id, contact_user_id)
+		);`,
+		`CREATE TABLE IF NOT EXISTS notifications (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			title TEXT NOT NULL,
+			body TEXT,
+			data JSONB,
+			read_at TIMESTAMPTZ,
+			created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+		);`,
+	}
+
+	for _, m := range migrations {
+		if _, err := pg.Exec(ctx, m); err != nil {
+			return err
+		}
+	}
+	return nil
 }

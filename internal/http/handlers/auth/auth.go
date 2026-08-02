@@ -24,7 +24,7 @@ type AnonymousResponse struct {
 func (h *AuthHandler) Anonymous(c *gin.Context) {
 	userID, publicID, err := h.svc.CreateAnonymousIdentity(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create identity"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create identity: " + err.Error()})
 		return
 	}
 
