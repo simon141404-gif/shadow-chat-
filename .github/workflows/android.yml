@@ -99,7 +99,7 @@ jobs:
   assemble-release:
     name: Build Release APK
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop') && secrets.ANDROID_KEYSTORE_BASE64 != ''
     needs: test
     permissions:
       contents: write
