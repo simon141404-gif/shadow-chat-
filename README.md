@@ -17,8 +17,7 @@ A privacy-focused end-to-end encrypted messaging application with a Go backend a
 ### Pre-built APKs
 
 Download the latest debug APK from GitHub Actions:
-
-1. Go to [GitHub Actions](https://github.com/simon141404-gif/shadow-chat-/actions)
+1. Go to: https://github.com/simon141404-gif/shadow-chat-/actions
 2. Click on the latest workflow run
 3. Download the `debug-apk` artifact
 
