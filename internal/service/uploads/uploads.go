@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/yourorg/shadowchat/backend/internal/model"
 	"github.com/yourorg/shadowchat/backend/internal/repository/attachment"
@@ -31,13 +30,14 @@ type CreateUploadRequest struct {
 }
 
 func (s *UploadService) Create(ctx context.Context, userID string, req CreateUploadRequest) (*model.Upload, error) {
+	uploadID := uuid.New().String()
 	upload := &model.Upload{
-		ID:          uuid.New().String(),
+		ID:          uploadID,
 		UserID:      userID,
 		FileName:    req.FileName,
 		FileSize:    req.FileSize,
 		ContentType: req.ContentType,
-		StoragePath: filepath.Join(userID, upload.ID),
+		StoragePath: filepath.Join(userID, uploadID),
 		Status:      "pending",
 	}
 

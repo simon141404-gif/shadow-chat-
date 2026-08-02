@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/yourorg/shadowchat/backend/internal/service/websocket"
 	"github.com/gorilla/websocket"
 )
 
@@ -18,15 +17,14 @@ var upgrader = websocket.Upgrader{
 }
 
 type WSHandler struct {
-	hub *websocket.Hub
+	// Hub can be added later for full WebSocket support
 }
 
-func NewWSHandler(hub *websocket.Hub) *WSHandler {
-	return &WSHandler{hub: hub}
+func NewWSHandler() *WSHandler {
+	return &WSHandler{}
 }
 
 func (h *WSHandler) Serve(c *gin.Context) {
-	userID := c.GetString("userId")
 	chatID := c.Query("chatId")
 	if chatID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "chatId required"})
@@ -38,23 +36,18 @@ func (h *WSHandler) Serve(c *gin.Context) {
 		return
 	}
 
-	client := &websocket.Client{
-		hub:    h.hub,
-		userID: userID,
+	client := &Client{
 		chatID: chatID,
 		send:   make(chan []byte, 256),
 		conn:   conn,
 	}
 
-	h.hub.Register(client)
-
 	go client.writePump()
 	go client.readPump()
 }
 
+// Client represents a WebSocket client with connection
 type Client struct {
-	hub    *websocket.Hub
-	userID string
 	chatID string
 	send   chan []byte
 	conn   *websocket.Conn
@@ -62,7 +55,6 @@ type Client struct {
 
 func (c *Client) readPump() {
 	defer func() {
-		c.hub.Unregister(c)
 		c.conn.Close()
 	}()
 
@@ -72,13 +64,13 @@ func (c *Client) readPump() {
 			break
 		}
 
-		var msg websocket.Message
+		var msg map[string]interface{}
 		if err := json.Unmarshal(message, &msg); err != nil {
 			continue
 		}
 
-		// Handle incoming messages
-		c.hub.Broadcast(c.chatID, c.userID, msg)
+		// TODO: Handle incoming messages through hub
+		_ = msg
 	}
 }
 
@@ -86,7 +78,7 @@ func (c *Client) writePump() {
 	defer c.conn.Close()
 
 	for {
-		message, ok := <-c.send:
+		message, ok := <-c.send
 		if !ok {
 			c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 			return

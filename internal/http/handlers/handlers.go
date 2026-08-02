@@ -37,6 +37,6 @@ func NewBundle(svc service.Bundle, cfg config.Config, logger *zap.Logger) Bundle
 		Uploads:       uploadsHandler.NewUploadsHandler(svc.Uploads),
 		Profile:       profileHandler.NewProfileHandler(svc.Profile),
 		Notifications: notificationsHandler.NewNotificationsHandler(svc.Notifications),
-		WS:            wsHandler.NewWSHandler(svc.WSHub),
+		WS:            wsHandler.NewWSHandler(),
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/yourorg/shadowchat/backend/internal/model"
 	"github.com/yourorg/shadowchat/backend/internal/service/chats"
 	"github.com/yourorg/shadowchat/backend/internal/service/messages"
 )
@@ -42,7 +43,7 @@ func (h *ChatsHandler) Create(c *gin.Context) {
 	}
 
 	chat, err := h.svc.Create(c.Request.Context(), userID, chats.CreateChatRequest{
-		Type:    req.Type,
+		Type:    model.ChatType(req.Type),
 		Name:    req.Name,
 		Members: req.Members,
 	})
@@ -106,7 +107,7 @@ func (h *ChatsHandler) SendMessage(c *gin.Context) {
 
 	msg, err := h.messages.Send(c.Request.Context(), chatID, userID, messages.SendMessageRequest{
 		ClientMsgID:      req.ClientMsgID,
-		MessageType:      messages.MessageType(req.MessageType),
+		MessageType:      model.MessageType(req.MessageType),
 		Content:          req.Content,
 		ReplyToMessageID: req.ReplyToMessageID,
 		Attachments:      req.Attachments,
