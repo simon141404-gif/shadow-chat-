@@ -6,7 +6,9 @@ services:
     buildCommand: go build -o bin/shadowchat-backend ./cmd/server
     startCommand: ./bin/shadowchat-backend
     envVars:
+      - key: POSTGRES_URL
+        value: "postgres://shadowchat_db_k778_user:ZEga1ThtpYLQF4cwJ1xeHAZr6e9N88sp@dpg-d9ncf9e417fc73d38dhg-a.cloudclusters.net:5432/shadowchat_db_k778"
       - key: JWT_SECRET
-        value: mysecret123
+        value: "shadowchat123"
       - key: ALLOWED_ORIGIN
         value: "*"
